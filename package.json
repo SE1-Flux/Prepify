@@ -1,0 +1,16 @@
+{
+  "name": "prepify",
+  "version": "1.0.0",
+  "description": "Prepify - Make knowledge your next adventure. AI-powered gamified study platform.",
+  "scripts": {
+    "install:all": "npm run install:server && npm run install:client",
+    "install:server": "cd server && npm install",
+    "install:client": "cd client && npm install",
+    "server": "cd server && node server.js",
+    "client": "cd client && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
