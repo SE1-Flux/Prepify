@@ -18,36 +18,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-let dbPromise = null;
-const ensureDB = async () => {
-  if (!getMongoStatus()) {
-    if (!dbPromise) {
-      dbPromise = connectDB().finally(() => {
-        dbPromise = null;
-      });
-    }
-    await dbPromise;
-  }
-};
-connectDB();
-
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Ensure DB connected on each serverless invocation
+// Lazily connect to DB on incoming requests with timeout safeguard
 app.use(async (req, res, next) => {
-  if (!getMongoStatus()) {
-    await ensureDB();
+  try {
+    if (!getMongoStatus()) {
+      // Don't let DB connect block request longer than 3 seconds
+      await Promise.race([
+        connectDB(),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
+      ]);
+    }
+  } catch (err) {
+    console.warn('[Serverless DB Middleware Warn]', err.message);
   }
-  next();
-});
-
-// Request logging
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
 });
 
@@ -57,8 +45,7 @@ app.use('/api/game', gameRoutes);
 app.use('/api/auth', authRoutes);
 
 // Health check endpoint
-app.get('/api/health', async (req, res) => {
-  await ensureDB();
+app.get('/api/health', (req, res) => {
   const mongoOk = getMongoStatus();
   const geminiOk = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here');
   
@@ -77,15 +64,13 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
-// Graceful shutdown
+// Graceful shutdown (for local development)
 process.on('SIGINT', async () => {
-  console.log('\nShutting down Prepify server...');
   await disconnectFromMongoDB();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.log('\nShutting down Prepify server...');
   await disconnectFromMongoDB();
   process.exit(0);
 });
