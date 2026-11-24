@@ -61,12 +61,16 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// Start Express Server
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`🚀 Prepify Backend Server running on port ${PORT}`);
-  console.log(`📍 Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`📚 Materials API: http://localhost:${PORT}/api/materials`);
-  console.log(`🎮 Game API:      http://localhost:${PORT}/api/game/leaderboard`);
-  console.log(`===============================================`);
-});
+// Start a local Express server outside Vercel serverless deployments.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`🚀 Prepify Backend Server running on port ${PORT}`);
+    console.log(`📍 Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`📚 Materials API: http://localhost:${PORT}/api/materials`);
+    console.log(`🎮 Game API:      http://localhost:${PORT}/api/game/leaderboard`);
+    console.log(`===============================================`);
+  });
+}
+
+export default app;

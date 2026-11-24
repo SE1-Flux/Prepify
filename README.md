@@ -24,35 +24,68 @@ Traditional studying often defaults to passive re-reading, highlighting, and las
 
 ---
 
-## 🏛️ System Architecture
+## 🏛️ System Architecture Description
 
-Prepify is engineered as a decoupled full-stack application structured into three distinct layers:
+Prepify applies a layered architecture in order to organize and provide scalability for every platform component by isolating gamified learning logic, efficiently orchestrating AI content pipelines, and properly presenting responsive web UI elements. Every layer provides an integral role when it comes to maintainability, modularity, and interaction between the application, AI engines, and database. This approach ensures high cohesion and low coupling, allowing for efficient quality assurance testing, smooth multiplayer synchronization, and streamlined future development. The system is divided into four primary layers: the User Layer, Application Layer, Services Layer, and Database Layer.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        CLIENT / PRESENTATION LAYER                     │
-│    React.js (v18) · Tailwind CSS · Vite · Plus Jakarta Sans Typography │
-│    Interactive Landing Page · Modals · Study Viewer · Dive Simulator   │
+│                        LAYER 1: USER LAYER                             │
+│   Responsive Client Web Application (SPA, React.js, Tailwind CSS)      │
+│   Secure Connection Management (HTTPS RESTful APIs + Live WebSockets)  │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ HTTP / REST / JSON & Multipart
+                                    │ HTTPS / REST / WebSockets
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                     BACKEND & APPLICATION PROCESSING LAYER             │
-│    Node.js · Express.js · Multer Ingest · CORS · Process Lifecycle     │
-├───────────────────────────────────┬────────────────────────────────────┤
-│       Document Processing         │          AI Synthesis Engine       │
-│  pdf-parse (Binary Text Extract)  │  Google Gemini API (@google/genai) │
-│  Cleaning, Token & Word Counting  │  Summaries, Cards, Quizzes, Depths │
-└───────────────────────────────────┴────────────────────────────────────┘
+│                     LAYER 2: APPLICATION LAYER                         │
+│   API Gateway & RBAC Controller (Token Validation, Rate Limits, Roles) │
+│   Study Workflow Coordinator (Document Ingest -> AI Pipeline Routing)  │
+│   Multiplayer Session Manager (Rooms, Matchmaking, Lobbies, PvP/TvT)   │
+└───────────────────────────────────┬────────────────────────────────────┘
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                        DATA PERSISTENCE LAYER                          │
-│    MongoDB Atlas Cloud Cluster (fluxdb.68bqaj3.mongodb.net)            │
-│    Mongoose Schemas: User Accounts, Study Materials, High Scores       │
-│    * Includes automatic In-Memory fallback for zero-friction setup     │
+│                      LAYER 3: SERVICES LAYER                           │
+│   Document & Text Processing (PDF Sanitization, Token & Word Extraction)│
+│   Core Gameplay Mechanics (Concept Matching, Flashcards, Word Puzzles) │
+│   State & Automated Grading (Real-Time Scoring, Streaks, Diagnostics)  │
+│   Presentation & Real-Time Sync (HUD Updates, Animations, Sync Boards) │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                      LAYER 4: DATABASE LAYER                           │
+│   Primary Database (MongoDB Atlas: Users, Materials, Quizzes, History) │
+│   In-Memory Cache (Redis: WebSocket Rooms, Match States, Session Tokens│
+│   Cloud Object Storage (Secure PDF Encrypted Storage)                  │
+│   External AI Engine API (Google Gemini API: Summaries, Quizzes, Cards)│
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Layer 1: The User Layer
+This is where the user experiences the web platform and browser input tier. It represents the bridge between student interactions and the digital learning environment.
+* **Responsive Client Web Application:** Consists of the cross-browser Single Page Application (SPA) running in the user's browser. It renders the personalized student dashboard, public landing pages, document upload interfaces, and the gamified study views.
+* **Secure Connection Management:** While local gameplay mechanics (e.g., card flipping, drag-and-drop UI actions) execute client-side, this layer initiates secure RESTful connections (via HTTPS) to the Application Layer for authentication, document uploads, and asset fetching. For interactive multiplayer modes, it opens persistent, low-latency WebSocket connections to synchronize live game states.
+
+### Layer 2: Application Layer
+The Application Layer serves as the high-level orchestrator for user sessions, access permissions, and automated study workflows. It routes incoming client requests, coordinates background tasks, and enforces business rules.
+* **API Gateway & RBAC Controller:** Acts as the primary entry point for all client requests. It validates session tokens, enforces rate limits, and executes Role-Based Access Control (RBAC) to separate unregistered guests (restricted to the landing page and public demos) from registered students (granted full access to upload, generate, store, and play).
+* **Study Workflow Coordinator:** Manages the sequential pipeline for transforming raw user input into playable assets—routing uploaded documents through processing, sending clean content to the AI engine, and delivering structured study guides to the user's dashboard.
+* **Multiplayer Session Manager:** Coordinates room creation, player matchmaking, lobby states, and host management for Player vs. Player (PvP) and Team vs. Team interactive game modes.
+
+### Layer 3: Services Layer
+The Services Layer functions as the core engine of Prepify, executing document parsing, gamification rules, automated evaluation algorithms, and UI state rendering. It is subdivided into four specialized modules:
+* **Document & Text Processing:** Handles secure input validation, stripping raw uploaded PDF and text files of clutter, and parsing unstructured content into clean data payloads optimized for AI processing.
+* **Core Gameplay Mechanics:** Encapsulates the behavioral rules and interactive mechanics for study modes. This includes the logic for drag-and-drop concept matching, timed flashcard countdowns, word puzzle grid generation, and multiplayer action resolution.
+* **State and Automated Grading:** Acts as the central hub for real-time player evaluation and progress tracking. It executes scoring algorithms, tracks active user streaks, calculates completion times, computes diagnostic feedback to highlight knowledge weaknesses, and logs session history to the student's dashboard.
+* **Presentation and Real-Time Sync:** Translates game state changes into immediate visual and sensory feedback. It manages HTML5 Canvas/DOM updates, updates HUD elements (score counters, progress bars, timers), triggers micro-interaction animations, and synchronizes real-time multiplayer game boards via WebSockets.
+
+### Layer 4: Database Layer
+The Database Layer handles all persistent data storage, fast temporary caching, and external AI integrations. To protect the performance and responsiveness of the user interface, it communicates securely with the Services and Application layers.
+* **Primary Database (MongoDB):** Stores persistent application records, including user profiles, encrypted credentials, stored study guides, structured quiz sets, historical attempts, and overall player progression.
+* **In-Memory Cache (Redis):** Stores short-lived operational data to reduce latency, including active WebSocket room states, multiplayer live match states, temporary session tokens, and real-time leaderboard scores.
+* **Cloud Object Storage:** Manages secure, encrypted storage for original student-uploaded PDF files and temporary text extractions.
+* **External AI Engine API:** External processing integration that receives structured prompts and clean text payloads from the backend, returning JSON responses containing concise summaries, core concept lists, and automatically generated quiz items.
 
 ---
 

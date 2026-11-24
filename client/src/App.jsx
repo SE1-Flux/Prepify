@@ -1,25 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
-import HeroSection from './components/HeroSection';
-import BenefitsRibbon from './components/BenefitsRibbon';
-import StudyToolkit from './components/StudyToolkit';
-import HowItWorks from './components/HowItWorks';
-import StudyCrew from './components/StudyCrew';
-import DiveGameSection from './components/DiveGameSection';
-import FaqSection from './components/FaqSection';
-import CtaSection from './components/CtaSection';
-import Footer from './components/Footer';
-import UploadModal from './components/UploadModal';
-import StudyViewModal from './components/StudyViewModal';
-import AuthModal from './components/AuthModal';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import CreateAccountPage from './pages/CreateAccountPage';
+import CheckEmailPage from './pages/CheckEmailPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import NewPasswordPage from './pages/NewPasswordPage';
+import PasswordUpdatedPage from './pages/PasswordUpdatedPage';
+import OnboardingProfilePage from './pages/OnboardingProfilePage';
+import StudyPreferencesPage from './pages/StudyPreferencesPage';
 import { checkServerHealth, fetchDemoMaterial } from './services/api';
 
 export default function App() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
-  const [currentUser, setCurrentUser] = useState(null);
-  
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('prepify_user');
+      if (!saved) return null;
+
+      const user = JSON.parse(saved);
+      if (
+        !user.provider &&
+        user.name === 'Alex Lee' &&
+        user.email === 'alex.lee@email.com'
+      ) {
+        const googleUser = { ...user, provider: 'google' };
+        localStorage.setItem('prepify_user', JSON.stringify(googleUser));
+        return googleUser;
+      }
+      return user;
+    } catch {
+      return null;
+    }
+  });
+
   // Study material modal viewer
   const [activeMaterial, setActiveMaterial] = useState(null);
   const [isStudyViewOpen, setIsStudyViewOpen] = useState(false);
@@ -33,9 +47,22 @@ export default function App() {
     });
   }, []);
 
-  const handleOpenAuth = (mode = 'login') => {
-    setAuthMode(mode);
-    setIsAuthOpen(true);
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('prepify_user', JSON.stringify(user));
+    } catch (e) {
+      console.warn('Storage warning:', e);
+    }
+  };
+
+  const handleSignOut = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('prepify_user');
+    } catch (e) {
+      console.warn('Storage warning:', e);
+    }
   };
 
   const handleMaterialLoaded = (material) => {
@@ -55,62 +82,66 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 flex flex-col relative selection:bg-primary-100 selection:text-primary-800" data-node-id="1568:3230" data-name="Prepify — LANDING PAGE">
-      
-      {/* Optional Server Status Badge for development verification */}
-      {serverHealth && serverHealth.status === 'healthy' && (
-        <aside aria-label="System status" className="bg-primary-950 text-primary-200 text-[11px] py-1 px-4 text-center font-medium border-b border-primary-900 flex items-center justify-center gap-3">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Prepify Full-Stack Active
-          </span>
-          <span>•</span>
-          <span>MongoDB: {serverHealth.mongoConnected ? 'Connected' : 'In-Memory Mode'}</span>
-          <span>•</span>
-          <span>Gemini AI: {serverHealth.geminiEnabled ? 'Enabled' : 'Default Intelligent Packs'}</span>
-        </aside>
-      )}
+    <BrowserRouter>
+      <Routes>
+        {/* Landing Page */}
+        <Route
+          path="/"
+          element={
+            <LandingPage
+              serverHealth={serverHealth}
+              currentUser={currentUser}
+              onSignOut={handleSignOut}
+              isUploadOpen={isUploadOpen}
+              setIsUploadOpen={setIsUploadOpen}
+              isStudyViewOpen={isStudyViewOpen}
+              setIsStudyViewOpen={setIsStudyViewOpen}
+              activeMaterial={activeMaterial}
+              handleMaterialLoaded={handleMaterialLoaded}
+              handleOpenDemo={handleOpenDemo}
+            />
+          }
+        />
 
-      {/* Main Landing Page Structure from Figma */}
-      <Navbar
-        onOpenUpload={() => setIsUploadOpen(true)}
-        onOpenAuth={handleOpenAuth}
-        currentUser={currentUser}
-        onSignOut={() => setCurrentUser(null)}
-      />
+        {/* Auth Screens converted from Figma */}
+        <Route
+          path="/login"
+          element={<LoginPage onLoginSuccess={handleLoginSuccess} />}
+        />
+        <Route
+          path="/register"
+          element={<CreateAccountPage onRegisterSuccess={handleLoginSuccess} />}
+        />
+        <Route
+          path="/check-email"
+          element={<CheckEmailPage />}
+        />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+        <Route
+          path="/new-password"
+          element={<NewPasswordPage />}
+        />
+        <Route
+          path="/password-updated"
+          element={<PasswordUpdatedPage />}
+        />
 
-      <main className="flex-1">
-        <HeroSection onOpenUpload={() => setIsUploadOpen(true)} />
-        <BenefitsRibbon />
-        <StudyToolkit onOpenUpload={() => setIsUploadOpen(true)} onOpenDemo={handleOpenDemo} />
-        <HowItWorks />
-        <StudyCrew />
-        <DiveGameSection onOpenUpload={() => setIsUploadOpen(true)} />
-        <FaqSection />
-        <CtaSection onOpenUpload={() => setIsUploadOpen(true)} />
-      </main>
+        {/* Onboarding Screens */}
+        <Route
+          path="/onboarding"
+          element={<OnboardingProfilePage />}
+        />
+        <Route
+          path="/onboarding/preferences"
+          element={<StudyPreferencesPage onFinishOnboarding={handleLoginSuccess} />}
+        />
 
-      <Footer />
-
-      {/* Interactive Modals */}
-      <UploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        onMaterialLoaded={handleMaterialLoaded}
-      />
-
-      <StudyViewModal
-        isOpen={isStudyViewOpen}
-        onClose={() => setIsStudyViewOpen(false)}
-        material={activeMaterial}
-      />
-
-      <AuthModal
-        isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        initialMode={authMode}
-        onAuthSuccess={(user) => setCurrentUser(user)}
-      />
-    </div>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

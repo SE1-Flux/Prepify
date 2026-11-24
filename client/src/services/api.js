@@ -45,20 +45,75 @@ export async function submitGameScore(scoreData) {
   return await res.json();
 }
 
-export async function loginUser(email, password) {
+export async function loginUser(credentials) {
+  // Accepts object { email, password } or arguments (email, password)
+  const body = typeof credentials === 'object' && credentials !== null
+    ? credentials
+    : { email: arguments[0], password: arguments[1] };
+
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(body),
   });
   return await res.json();
 }
 
-export async function registerUser(name, email, password, selectedMascot) {
+export async function googleLogin(idToken) {
+  const res = await fetch(`${API_BASE}/auth/google`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  });
+  return await res.json();
+}
+
+export async function registerUser(userData) {
+  // Accepts object { name, email, password, selectedMascot } or individual arguments
+  const body = typeof userData === 'object' && userData !== null
+    ? userData
+    : { name: arguments[0], email: arguments[1], password: arguments[2], selectedMascot: arguments[3] };
+
   const res = await fetch(`${API_BASE}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password, selectedMascot }),
+    body: JSON.stringify(body),
+  });
+  return await res.json();
+}
+
+export async function forgotPassword(data) {
+  const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+}
+
+export async function resetPassword(data) {
+  const res = await fetch(`${API_BASE}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+}
+
+export async function updateProfile(data) {
+  const res = await fetch(`${API_BASE}/auth/profile`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return await res.json();
+}
+
+export async function updatePreferences(data) {
+  const res = await fetch(`${API_BASE}/auth/preferences`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
   });
   return await res.json();
 }

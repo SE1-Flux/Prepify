@@ -56,7 +56,41 @@ GEMINI_API_KEY=your_gemini_api_key_here
 
 # JWT Authentication Secret
 JWT_SECRET=prepify_super_secret_jwt_key_2026
+
+# Google OAuth / Gmail SSO
+GOOGLE_CLIENT_ID=your_google_web_client_id.apps.googleusercontent.com
 ```
+
+For real Gmail login, create a Google OAuth 2.0 **Web application** client in Google Cloud Console, then:
+1. Add `GOOGLE_CLIENT_ID` to `server/.env`.
+2. Add `VITE_GOOGLE_CLIENT_ID` to `client/.env`.
+3. Add `http://localhost:5173` to the OAuth client's Authorized JavaScript origins.
+4. Use the same client ID in both variables.
+
+## Deploying to Vercel
+
+The repository includes `vercel.json` for a combined Vite frontend and Express API deployment.
+
+1. Install and authenticate the Vercel CLI:
+   ```bash
+   npm install
+   npx vercel login
+   ```
+2. Import the repository in Vercel or run:
+   ```bash
+   npm run vercel:deploy
+   ```
+3. Add these variables in **Vercel Project Settings > Environment Variables**:
+   - `MONGODB_URI`
+   - `GEMINI_API_KEY`
+   - `JWT_SECRET`
+   - `GOOGLE_CLIENT_ID`
+   - `VITE_GOOGLE_CLIENT_ID`
+4. Add both the Vercel production URL and preview URLs as Google OAuth Authorized JavaScript origins, for example:
+   `https://your-project.vercel.app`
+5. Redeploy after changing environment variables.
+
+The frontend is built from `client/`, while `/api/*` requests are routed to the Express server.
 
 > [!IMPORTANT]
 > * **MongoDB Setup:** Replace `<db_password>` with your database user's password. If left as `<db_password>`, the server automatically operates in **In-Memory Mode** so you can test immediately without database errors.

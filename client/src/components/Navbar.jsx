@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, BookOpen, Sparkles } from 'lucide-react';
 
-export default function Navbar({ onOpenUpload, onOpenAuth, currentUser, onSignOut }) {
+export default function Navbar({ onOpenUpload, currentUser, onSignOut }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
+  const isGoogleUser = currentUser?.provider === 'google';
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-neutral-200/60 transition-all" data-node-id="1568:3231" data-name="Navigation">
@@ -10,14 +13,14 @@ export default function Navbar({ onOpenUpload, onOpenAuth, currentUser, onSignOu
         
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          <a href="#" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2 group">
             <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white shadow-md shadow-primary-600/20 group-hover:scale-105 transition-transform">
               <Sparkles className="w-5 h-5" />
             </div>
             <span className="font-extrabold text-[25px] text-neutral-900 tracking-tight leading-none" data-node-id="1568:3232">
               Prepify
             </span>
-          </a>
+          </Link>
         </div>
 
         {/* Desktop Navigation Links */}
@@ -55,24 +58,26 @@ export default function Navbar({ onOpenUpload, onOpenAuth, currentUser, onSignOu
         <div className="hidden md:flex items-center gap-5">
           {currentUser ? (
             <div className="flex items-center gap-4">
-              <span className="text-sm font-semibold text-neutral-700">
-                Hi, <span className="text-primary-600 font-bold">{currentUser.name}</span>
-              </span>
+              {!isGoogleUser && (
+                <span className="text-sm font-semibold text-neutral-700">
+                  Hi, <span className="text-primary-600 font-bold">{currentUser.name}</span>
+                </span>
+              )}
               <button
                 onClick={onSignOut}
-                className="text-xs font-semibold text-neutral-600 hover:text-red-600 px-2 py-1 transition-colors"
+                className="text-xs font-semibold text-neutral-600 hover:text-red-600 px-2 py-1 transition-colors cursor-pointer"
               >
                 Log out
               </button>
             </div>
           ) : (
-            <button
-              onClick={() => onOpenAuth('login')}
+            <Link
+              to="/login"
               className="font-semibold text-[14px] text-neutral-700 hover:text-primary-600 px-3 py-2 transition-colors cursor-pointer"
               data-node-id="1568:3236"
             >
               Log in
-            </button>
+            </Link>
           )}
 
           <button
@@ -138,12 +143,12 @@ export default function Navbar({ onOpenUpload, onOpenAuth, currentUser, onSignOu
                 }}
                 className="w-full text-center py-2 text-sm font-semibold text-red-600"
               >
-                Log out ({currentUser.name})
+                {isGoogleUser ? 'Log out' : `Log out (${currentUser.name})`}
               </button>
             ) : (
               <button
                 onClick={() => {
-                  onOpenAuth('login');
+                  navigate('/login');
                   setMobileMenuOpen(false);
                 }}
                 className="w-full text-center py-2 text-sm font-semibold text-neutral-700"
