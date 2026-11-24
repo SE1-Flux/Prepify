@@ -1,6 +1,7 @@
 {
   "name": "prepify",
   "version": "1.0.0",
+  "type": "module",
   "description": "Prepify - Make knowledge your next adventure. AI-powered gamified study platform.",
   "scripts": {
     "install:all": "npm run install:server && npm run install:client",
