@@ -19,12 +19,31 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Connect to MongoDB
+let dbPromise = null;
+const ensureDB = async () => {
+  if (!getMongoStatus()) {
+    if (!dbPromise) {
+      dbPromise = connectDB().finally(() => {
+        dbPromise = null;
+      });
+    }
+    await dbPromise;
+  }
+};
 connectDB();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Ensure DB connected on each serverless invocation
+app.use(async (req, res, next) => {
+  if (!getMongoStatus()) {
+    await ensureDB();
+  }
+  next();
+});
 
 // Request logging
 app.use((req, res, next) => {
@@ -38,12 +57,22 @@ app.use('/api/game', gameRoutes);
 app.use('/api/auth', authRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  await ensureDB();
+  const mongoOk = getMongoStatus();
+  const geminiOk = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here');
+  
   res.json({
     status: 'healthy',
     service: 'Prepify Backend API',
-    mongoConnected: getMongoStatus(),
-    geminiEnabled: Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here'),
+    mongoConnected: mongoOk,
+    geminiEnabled: geminiOk,
+    debug: {
+      hasMongoUri: Boolean(process.env.MONGODB_URI),
+      hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+      nodeEnv: process.env.NODE_ENV || 'production',
+      isVercel: Boolean(process.env.VERCEL),
+    },
     timestamp: new Date(),
   });
 });
