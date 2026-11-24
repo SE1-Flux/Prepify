@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import HeroSection from '../components/HeroSection';
 import BenefitsRibbon from '../components/BenefitsRibbon';
@@ -24,15 +25,37 @@ export default function LandingPage({
   handleMaterialLoaded,
   handleOpenDemo,
 }) {
+  const navigate = useNavigate();
+
+  const openProtectedUploader = () => {
+    if (!currentUser) {
+      navigate('/login', {
+        state: {
+          message: 'Please sign in or create an account to use the AI Study Synthesizer.',
+        },
+      });
+      return;
+    }
+
+    setIsUploadOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-white text-neutral-900 flex flex-col relative selection:bg-primary-100 selection:text-primary-800" data-node-id="1568:3230" data-name="Prepify — LANDING PAGE">
       
-      {/* Server Status Badge for development verification */}
-      {serverHealth && serverHealth.status === 'healthy' && (
-        <aside aria-label="System status" className="bg-primary-950 text-primary-200 text-[11px] py-1 px-4 text-center font-medium border-b border-primary-900 flex items-center justify-center gap-3">
+      {/* Development status: hidden when all required services are working */}
+      {serverHealth && (
+        serverHealth.status !== 'healthy' ||
+        !serverHealth.mongoConnected ||
+        !serverHealth.geminiEnabled
+      ) && (
+        <aside
+          aria-label="System status"
+          className="bg-amber-950 text-amber-100 text-[11px] py-1 px-4 text-center font-medium border-b border-amber-900 flex items-center justify-center gap-3"
+        >
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            Prepify Full-Stack Active
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            Prepify Needs Attention
           </span>
           <span>•</span>
           <span>MongoDB: {serverHealth.mongoConnected ? 'Connected' : 'In-Memory Mode'}</span>
@@ -43,20 +66,20 @@ export default function LandingPage({
 
       {/* Main Landing Page Structure from Figma */}
       <Navbar
-        onOpenUpload={() => setIsUploadOpen(true)}
+        onOpenUpload={openProtectedUploader}
         currentUser={currentUser}
         onSignOut={onSignOut}
       />
 
       <main className="flex-1">
-        <HeroSection onOpenUpload={() => setIsUploadOpen(true)} />
+        <HeroSection onOpenUpload={openProtectedUploader} />
         <BenefitsRibbon />
-        <StudyToolkit onOpenUpload={() => setIsUploadOpen(true)} onOpenDemo={handleOpenDemo} />
+        <StudyToolkit onOpenUpload={openProtectedUploader} onOpenDemo={handleOpenDemo} />
         <HowItWorks />
         <StudyCrew />
-        <DiveGameSection onOpenUpload={() => setIsUploadOpen(true)} />
+        <DiveGameSection onOpenUpload={openProtectedUploader} />
         <FaqSection />
-        <CtaSection onOpenUpload={() => setIsUploadOpen(true)} />
+        <CtaSection onOpenUpload={openProtectedUploader} />
       </main>
 
       <Footer />

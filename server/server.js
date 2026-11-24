@@ -63,13 +63,22 @@ process.on('SIGTERM', async () => {
 
 // Start a local Express server outside Vercel serverless deployments.
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`===============================================`);
     console.log(`🚀 Prepify Backend Server running on port ${PORT}`);
     console.log(`📍 Health Check: http://localhost:${PORT}/api/health`);
     console.log(`📚 Materials API: http://localhost:${PORT}/api/materials`);
     console.log(`🎮 Game API:      http://localhost:${PORT}/api/game/leaderboard`);
     console.log(`===============================================`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n❌ Error: Port ${PORT} is already in use by another process.`);
+      console.error(`👉 Run this in PowerShell to free it:\n   Stop-Process -Id (Get-NetTCPConnection -LocalPort ${PORT}).OwningProcess -Force\n`);
+    } else {
+      console.error('Server error:', err);
+    }
   });
 }
 
