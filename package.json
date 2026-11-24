@@ -9,7 +9,7 @@
     "server": "cd server && node server.js",
     "client": "cd client && npm run dev",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run build --prefix client",
+    "build": "npm install --prefix client --include=dev && npm run build --prefix client",
     "vercel:login": "npx vercel login",
     "vercel:dev": "npx vercel dev",
     "vercel:deploy": "npx vercel --prod"
